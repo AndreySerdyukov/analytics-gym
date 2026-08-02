@@ -5,7 +5,7 @@ import { Card, EmptyState, ProgressBar, StatusBadge } from '../components/ui'
 import type { Block } from '../data/types'
 import { useAsync } from '../data/useAsync'
 
-export function DashboardPage({ blocks }: { blocks: Block[] }) {
+export function DashboardPage({ blocks, dueToday }: { blocks: Block[]; dueToday: number }) {
   const inProgress = useAsync((source) => source.listTasks({ status: 'in_progress' }), [])
   const solvedTotal = blocks.reduce((sum, block) => sum + block.tasks_solved, 0)
   const tasksTotal = blocks.reduce((sum, block) => sum + block.tasks_total, 0)
@@ -21,6 +21,22 @@ export function DashboardPage({ blocks }: { blocks: Block[] }) {
           </span>
         </p>
       </section>
+
+      {dueToday > 0 && (
+        <Link to="/review" className="block">
+          <Card className="flex items-center justify-between gap-4 border-accent transition-colors hover:bg-accent-soft">
+            <div>
+              <p className="text-lg font-bold">К повторению сегодня: {dueToday}</p>
+              <p className="text-sm text-muted">
+                Карточки из конспектов теории по алгоритму интервальных повторений
+              </p>
+            </div>
+            <span className="shrink-0 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-on-accent">
+              Начать
+            </span>
+          </Card>
+        </Link>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2">
         {blocks.map((block) => (

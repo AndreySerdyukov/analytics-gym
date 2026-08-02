@@ -11,13 +11,6 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.1.3",
-      "onFail": "download"
-    }
-  },
   "dependencies": {
     "@codemirror/lang-sql": "^6.10.0",
     "@codemirror/language": "^6.12.4",

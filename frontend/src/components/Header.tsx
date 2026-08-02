@@ -1,10 +1,15 @@
-/** Шапка с переключением блоков. Это главный элемент навигации приложения. */
+/** Шапка с переключением блоков и разделами теории и повторения. */
 
 import { NavLink } from 'react-router-dom'
 import type { Block } from '../data/types'
 import { useTheme } from '../theme/useTheme'
 
-export function Header({ blocks }: { blocks: Block[] }) {
+const linkClass = ({ isActive }: { isActive: boolean }): string =>
+  `shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+    isActive ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface-alt hover:text-text'
+  }`
+
+export function Header({ blocks, dueToday }: { blocks: Block[]; dueToday: number }) {
   const { theme, toggle } = useTheme()
 
   return (
@@ -16,21 +21,30 @@ export function Header({ blocks }: { blocks: Block[] }) {
         </NavLink>
 
         {/* На узком экране вкладки уезжают в горизонтальный скролл, а не переносятся. */}
-        <nav className="flex flex-1 gap-1 overflow-x-auto">
+        <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
           {blocks.map((block) => (
-            <NavLink
-              key={block.slug}
-              to={`/b/${block.slug}`}
-              className={({ isActive }) =>
-                `shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                  isActive ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface-alt hover:text-text'
-                }`
-              }
-            >
+            <NavLink key={block.slug} to={`/b/${block.slug}`} className={linkClass}>
               {block.icon && <span className="mr-1.5">{block.icon}</span>}
               {block.title}
             </NavLink>
           ))}
+
+          <span className="mx-1 h-5 w-px shrink-0 bg-border" />
+
+          <NavLink to="/theory" className={linkClass}>
+            Теория
+          </NavLink>
+          <NavLink to="/review" className={linkClass}>
+            Повторение
+            {dueToday > 0 && (
+              <span className="ml-1.5 rounded-full bg-warning-soft px-1.5 py-0.5 text-xs text-warning">
+                {dueToday}
+              </span>
+            )}
+          </NavLink>
+          <NavLink to="/stats" className={linkClass}>
+            Статистика
+          </NavLink>
         </nav>
 
         <button

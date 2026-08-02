@@ -9,8 +9,14 @@
 import type {
   AttemptInput,
   Block,
+  Card,
   FilterOptions,
+  NoteDetail,
+  NoteListItem,
   Progress,
+  Stats,
+  ReviewState,
+  ReviewSummary,
   TaskDetail,
   TaskFilters,
   TaskListItem,
@@ -25,6 +31,17 @@ export interface DataSource {
   saveAttempt(slug: string, attempt: AttemptInput): Promise<Progress>
   saveNote(slug: string, noteMd: string | null): Promise<Progress>
   setStatus(slug: string, status: TaskStatus): Promise<Progress>
+
+  // Повторение теории
+  dueCards(blockSlug?: string, limit?: number): Promise<Card[]>
+  gradeCard(slug: string, grade: number): Promise<ReviewState>
+  reviewSummary(): Promise<ReviewSummary>
+  listNotes(blockSlug?: string): Promise<NoteListItem[]>
+  getNote(slug: string): Promise<NoteDetail>
+
+  /** Статистика по личной активности: прогресс, слабые темы, календарь занятий. */
+  getStats(): Promise<Stats>
+
   /** Режим влияет на подписи в интерфейсе: в демо прогресс хранится только в браузере. */
   readonly kind: 'api' | 'static'
 }

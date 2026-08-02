@@ -91,6 +91,80 @@ export interface FilterOptions {
   companies: string[]
 }
 
+/** Карточка в режиме повторения. */
+export interface Card {
+  slug: string
+  block_slug: string
+  note_title: string | null
+  question_md: string
+  answer_md: string
+  repetitions: number
+  due_date: string | null
+}
+
+/** Состояние карточки после оценки — по нему показываем, когда она вернётся. */
+export interface ReviewState {
+  ease_factor: number
+  interval_days: number
+  repetitions: number
+  due_date: string
+}
+
+export interface ReviewSummary {
+  due_today: number
+  cards_total: number
+}
+
+export interface NoteListItem {
+  slug: string
+  block_slug: string
+  title: string
+  tags: string[]
+  cards_count: number
+}
+
+export interface NoteDetail extends NoteListItem {
+  body_md: string
+}
+
+/** День в календаре занятий. */
+export interface ActivityDay {
+  day: string
+  attempts: number
+  reviews: number
+}
+
+export interface BlockStats {
+  block_slug: string
+  title: string
+  tasks_total: number
+  tasks_solved: number
+  attempts: number
+  avg_solve_seconds: number | null
+}
+
+export interface TagStats {
+  tag: string
+  tasks_total: number
+  tasks_solved: number
+  failed_attempts: number
+}
+
+export interface Stats {
+  totals: {
+    tasks_total: number
+    tasks_solved: number
+    attempts_total: number
+    attempts_correct: number
+    cards_total: number
+    cards_learned: number
+  }
+  by_block: BlockStats[]
+  weak_tags: TagStats[]
+  activity: ActivityDay[]
+  streak_days: number
+}
+
 export const DEFAULT_CHECK_CONFIG: CheckConfig = {
   ordered: false,
   tolerance: 0.001,

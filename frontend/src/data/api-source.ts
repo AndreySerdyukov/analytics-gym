@@ -4,8 +4,14 @@ import type { DataSource } from './source'
 import type {
   AttemptInput,
   Block,
+  Card,
   FilterOptions,
+  NoteDetail,
+  NoteListItem,
   Progress,
+  ReviewState,
+  ReviewSummary,
+  Stats,
   TaskDetail,
   TaskFilters,
   TaskListItem,
@@ -85,5 +91,35 @@ export class ApiDataSource implements DataSource {
       method: 'PUT',
       body: JSON.stringify({ status }),
     })
+  }
+
+  dueCards(blockSlug?: string, limit = 20): Promise<Card[]> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (blockSlug) params.set('block', blockSlug)
+    return request<Card[]>(`/review/due?${params}`)
+  }
+
+  gradeCard(slug: string, grade: number): Promise<ReviewState> {
+    return request<ReviewState>(`/review/${encodeURIComponent(slug)}/grade`, {
+      method: 'POST',
+      body: JSON.stringify({ grade }),
+    })
+  }
+
+  reviewSummary(): Promise<ReviewSummary> {
+    return request<ReviewSummary>('/review/summary')
+  }
+
+  listNotes(blockSlug?: string): Promise<NoteListItem[]> {
+    const query = blockSlug ? `?block=${encodeURIComponent(blockSlug)}` : ''
+    return request<NoteListItem[]>(`/notes${query}`)
+  }
+
+  getNote(slug: string): Promise<NoteDetail> {
+    return request<NoteDetail>(`/notes/${encodeURIComponent(slug)}`)
+  }
+
+  getStats(): Promise<Stats> {
+    return request<Stats>('/stats')
   }
 }
