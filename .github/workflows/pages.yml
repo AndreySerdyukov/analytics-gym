@@ -1,0 +1,76 @@
+# Публикация read-only демо на GitHub Pages.
+# Демо работает без бэкенда: контент выгружается в content.json, прогресс живёт
+# в localStorage посетителя, SQL-раннер и так целиком в браузере.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Публикуем по одному деплою за раз, лишние прогоны отменяем.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Сборка демо
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Зависимости backend
+        run: uv sync --frozen
+        working-directory: backend
+
+      # export-static читает только файлы из content/, база для него не нужна.
+      - name: Выгрузить контент в content.json
+        run: uv run python -m tools export-static
+        working-directory: backend
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Зависимости frontend
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Сборка демо
+        run: pnpm build:demo
+        working-directory: frontend
+        env:
+          # Сайт живёт в подкаталоге с именем репозитория.
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    name: Публикация
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

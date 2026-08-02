@@ -1,0 +1,92 @@
+# Проверка контента и кода. Главное здесь — прогон эталонных SQL на настоящем Postgres:
+# задача, чьё решение не выполняется, не должна попадать в main.
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Контент и backend
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: analytics_gym
+          POSTGRES_USER: analytics_gym
+          POSTGRES_PASSWORD: analytics_gym
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://analytics_gym:analytics_gym@localhost:5433/analytics_gym
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Зависимости
+        run: uv sync --frozen
+
+      - name: Миграции применяются начисто
+        run: uv run alembic upgrade head
+
+      - name: Формат контента и эталонные SQL
+        run: uv run python -m tools validate
+
+      - name: Контент заливается в базу
+        run: uv run python -m tools sync
+
+      - name: Тесты
+        run: uv run pytest -q
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Зависимости
+        run: pnpm install --frozen-lockfile
+
+      - name: Строгий TypeScript
+        run: pnpm typecheck
+
+      # Тесты поднимают PGlite и прогоняют на нём все эталонные решения из content/:
+      # так ловятся расхождения между «большим» Postgres и браузерным.
+      - name: Тесты
+        run: pnpm test
+
+      - name: Сборка
+        run: pnpm build
