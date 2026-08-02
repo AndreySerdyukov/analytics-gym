@@ -9,6 +9,9 @@
 (SQL, Статистика и A/B, Python, ML/DL), решение SQL-задач с автопроверкой прямо в браузере и
 повторение теории по интервальным повторениям. Репозиторий **публичный** и работает как портфолио.
 
+- Репозиторий: https://github.com/AndreySerdyukov/analytics-gym
+- Публичное демо: https://andreyserdyukov.github.io/analytics-gym/
+
 Что именно приложение делает — в [`PRD.md`](PRD.md). Журнал решений — в [`progress.md`](progress.md).
 
 ## Два вида данных — не путать
@@ -23,29 +26,59 @@
 | Видно в публичном репо | да, это и есть портфолио | никогда |
 
 Отсюда правило: **приложение никогда не пишет в контентные таблицы**, а `sync` никогда не трогает
-персональные.
+персональные. Удалённый из `content/` объект не удаляется физически, а помечается
+`is_archived = true` — иначе каскадом улетела бы личная история.
 
 ## Стек
 - **Backend:** Python 3.12+, **FastAPI**, SQLAlchemy 2.x, **Alembic**, pydantic-settings,
   `psycopg` 3. Окружение — **uv**.
 - **Frontend:** React 19 + **TypeScript** (`strict: true`), **Vite**, **Tailwind CSS 4**, pnpm.
-- **БД:** **PostgreSQL 16** локально (docker-compose, порт **5433**).
+- **БД:** **PostgreSQL 16** локально, порт **5433** (5432 занят соседним `language-app`).
 - **SQL-раннер:** **PGlite** (`@electric-sql/pglite`) — настоящий Postgres в WASM, целиком в
   браузере. Бэкенд в проверке решений не участвует.
+- **Редактор:** CodeMirror 6 (`@uiw/react-codemirror` + `@codemirror/lang-sql`).
 - **Auth:** нет — приложение однопользовательское и локальное.
+
+## Структура
+
+```
+analytics-gym/
+├── .github/workflows/{validate.yml,pages.yml}
+├── content/                      # ИСТОЧНИК ПРАВДЫ по контенту
+│   ├── blocks.yaml               # блоки и темы, порядок вкладок
+│   ├── sql/datasets/*.sql        # датасеты (DDL + наполнение)
+│   ├── <block>/tasks/*.md        # задачи
+│   └── theory/<block>/*.md       # конспекты; карточки внутри них
+├── backend/
+│   ├── app/api/v1/{blocks,tasks,review,stats}.py
+│   ├── app/services/             # бизнес-логика без FastAPI
+│   │   ├── progress.py           # правила статусов задачи
+│   │   ├── srs.py                # алгоритм SM-2
+│   │   ├── tasks.py review.py stats.py errors.py
+│   ├── app/repositories/         # весь SQL: content, personal, review, stats
+│   ├── app/schemas/              # pydantic-DTO
+│   ├── app/db/models/{content,personal}.py
+│   ├── tools/                    # CLI для content/
+│   └── tests/
+└── frontend/src/
+    ├── data/                     # DataSource, две реализации, типы, SM-2 на TS
+    ├── features/sql-runner/      # воркер PGlite, сравнение, редактор
+    ├── features/stats/           # календарь занятий
+    ├── pages/                    # Dashboard, Block, Task, Theory, Review, Stats
+    └── components/ theme/ index.css
+```
 
 ## Слои backend
 Строгая слоистость — бизнес-логика не импортирует FastAPI, весь SQL в data-слое:
 ```
 API (app/api)  →  services (бизнес-логика, без импорта FastAPI)  →  repositories (весь SQL)  →  PostgreSQL
 ```
-- `app/api/` — роутеры, зависимости в `api/deps.py`.
-- `app/services/` — бизнес-логика (SM-2, статистика); **не импортирует FastAPI**.
-- `app/repositories/` — **весь SQL здесь**; inline-SQL в роутерах запрещён.
-- `app/schemas/` — pydantic-DTO.
-- `app/db/` — `base.py`, `session.py`, `models/`.
-- `app/core/` — `config.py` (pydantic-settings).
-- `app/migrations/` — Alembic.
+- `app/api/` — роутеры, зависимости в `api/deps.py`. Доменные исключения из `services/errors.py`
+  мапятся в HTTP в `main.py`, сам слой services про HTTP не знает.
+- `app/services/` — бизнес-логика; **не импортирует FastAPI**, тестируется изолированно.
+- `app/repositories/` — **весь SQL здесь**; inline-SQL в роутерах запрещён. Репозиторий не
+  принимает решений: правила статусов и интервалов живут в services.
+- `app/schemas/` — pydantic-DTO. `app/db/` — модели и сессия. `app/core/config.py` — настройки.
 
 ## Контент-тулинг
 `backend/tools/` — CLI для работы с `content/`. Живёт внутри backend намеренно: переиспользует
@@ -55,43 +88,88 @@ API (app/api)  →  services (бизнес-логика, без импорта F
 cd backend
 uv run python -m tools new-task sql "Retention D7 по когортам"   # создать .md по шаблону
 uv run python -m tools new-note sql "Оконные функции"            # конспект теории
+uv run python -m tools new-dataset sql "Интернет-магазин v2"     # датасет
 uv run python -m tools validate                                  # схема + прогон эталонных SQL
 uv run python -m tools sync                                      # upsert контента в БД
-uv run python -m tools export-static                             # content.json для демо на Pages
+uv run python -m tools export-static                             # content.json для демо
 ```
 
 `validate` не просто проверяет frontmatter — он **выполняет каждое эталонное SQL-решение на живом
-Postgres** поверх его датасета. Опечатка в решении или разъехавшийся датасет ловятся сразу, а не
-через месяц при повторении.
+Postgres** поверх его датасета, во временной схеме с откатом транзакции. Опечатка в решении или
+разъехавшийся датасет ловятся сразу, а не через месяц при повторении. Он же следит, что задача
+с датасетом имеет `sql`-блок в разделе `## Решение` и что решение возвращает непустой результат.
 
 ## Формат контента
 Задача — `.md` с frontmatter, разделы `## Условие` / `## Решение` / `## Разбор`. Конспект теории —
-`.md`, где карточки для SRS лежат прямо в тексте в разделе `## Карточки` (`### Q: вопрос` + ответ).
-Датасет — обычный `.sql` (DDL + INSERT), один датасет обслуживает 5–15 задач.
+`.md`, где карточки для SRS лежат в разделе `## Карточки` (`### Q: вопрос` + ответ следом).
+Датасет — обычный `.sql`: метаданные в комментариях `-- title:` / `-- description:`, маркер
+`-- seed` делит структуру и наполнение. Один датасет обслуживает 5–15 задач.
 
-Единственное место правды о формате — pydantic-модели в `backend/tools/schema.py`. Меняешь формат —
-меняешь их, остальное подстраивается.
+Единственное место правды о формате — pydantic-модели в `backend/tools/schema.py`.
+
+Слаг строится как `<block>-<имя файла без номера>`: `content/sql/tasks/011-retention-…md` →
+`sql-retention-…`. Он глобально уникален, поэтому адрес задачи — `/t/<slug>`, без блока.
+
+Тонкость YAML: `tags: [join, null]` разберётся как `None` в списке. Слова вроде `null`, `yes`,
+`no`, `on`, `off` в тегах нужно брать в кавычки. `validate` это ловит.
 
 ## Два источника данных на фронте
 Приложение работает локально с FastAPI, а на GitHub Pages — как статичное read-only демо. Чтобы не
 писать UI дважды, все компоненты ходят за данными через интерфейс `DataSource`
 (`frontend/src/data/source.ts`) с двумя реализациями:
 
-- `ApiDataSource` — локальный полный режим (`VITE_DATA_SOURCE=api`, по умолчанию);
-- `StaticDataSource` — демо: контент из `content.json`, прогресс и SRS в `localStorage`.
+- `ApiDataSource` — локальный полный режим (сборка `dev`/`build`);
+- `StaticDataSource` — демо: контент из `content.json`, прогресс, повторения и журнал активности
+  в `localStorage`.
 
-**Компоненты не должны импортировать `fetch` или знать про API напрямую** — только `useDataSource()`.
-SQL-раннер работает одинаково в обоих режимах, он целиком в браузере.
+**Компоненты не должны импортировать `fetch` или знать про API напрямую** — только `useAsync`,
+который получает готовый источник. SQL-раннер работает одинаково в обоих режимах.
+
+Демо собирается с базой `/analytics-gym/` (переопределяется `VITE_BASE`) и **хеш-маршрутами**:
+Pages отдаёт только статику и не умеет возвращать `index.html` на произвольный путь, а
+относительная база ломала бы загрузку `content.json` со вложенных страниц.
+
+## Дублирование логики на Python и TypeScript
+Демо работает без бэкенда, поэтому две вещи существуют в двух реализациях:
+
+| Логика | Python | TypeScript |
+|---|---|---|
+| Правила статусов задачи | `app/services/progress.py` | внутри `data/static-source.ts` |
+| Интервальные повторения SM-2 | `app/services/srs.py` | `data/srs.ts` |
+
+Это осознанный компромисс, а не недосмотр. Реализации держатся синхронными **общими тест-кейсами**:
+`backend/tests/test_srs.py` и `frontend/src/data/srs.test.ts` содержат один и тот же список
+сценариев. Меняешь правило — меняй обе стороны и оба теста.
 
 ## Проверка SQL-решений
 Ожидаемый результат нигде не хранится: при запуске выполняются и запрос пользователя, и эталонный
-SQL из задачи — на одном датасете. Поэтому правка датасета не ломает задачи. Сравнение настраивается
-блоком `check` во frontmatter (`ordered`, `tolerance`, `ignore_column_names`).
+SQL из задачи — на одном датасете. Поэтому правка датасета не ломает задачи. Сравнение
+настраивается блоком `check` во frontmatter (`ordered`, `tolerance`, `ignore_column_names`,
+`max_rows`), логика — в `features/sql-runner/compare.ts`.
+
+Раннер живёт в воркере: тяжёлый запрос не вешает интерфейс, а зависший прерывается единственным
+работающим способом — `terminate()` воркера по таймауту. Запрос пользователя выполняется в
+транзакции с откатом, схема пересоздаётся при открытии задачи.
+
+## Цвет и визуализации
+Все цвета — только через токены из `index.css` (`bg-surface`, `text-muted`, `bg-accent`, …).
+Захардкоженных hex в компонентах быть не должно: тему переключает `data-theme` на `<html>`.
+
+Тёмная тема — **не автоинверсия**: её значения подобраны отдельно. Это касается и подсветки кода
+(`features/sql-runner/editor-theme.ts` вместо готовых тем CodeMirror), и шкалы календаря занятий
+(`--gym-heat-0…4`): на тёмном фоне интенсивность должна расти яркостью.
+
+Правила для графиков: одна шкала — один тон (sequential), монотонность светлоты обязательна;
+статусные цвета (успех/ошибка) не используются как «просто ещё один цвет»; полосы сравнения
+рисуются только когда есть разброс — одинаковые полосы во всю ширину не несут информации.
 
 ## Запуск
+
 ```bash
-# 1. БД:
+# 1. БД — Docker:
 docker compose up -d db
+#    либо локальный Postgres из brew (на macOS нужна явная локаль, иначе кластер не стартует):
+LC_ALL=C pg_ctl -D /opt/homebrew/var/postgresql@16 -o "-p 5433" -l /tmp/pg5433.log start
 
 # 2. Backend:
 cd backend
@@ -107,19 +185,34 @@ pnpm install
 pnpm dev                                       # http://localhost:5173
 ```
 
+Если порт 8000 занят, бэкенд поднимается на другом (`--port N`), а фронту указывается цель прокси:
+`VITE_API_TARGET=http://localhost:N pnpm dev`.
+
 ## Тестирование
-- `pytest`, тесты в `backend/tests/`. Логику из `services/` (SM-2, сравнение результатов) тестируем
-  изолированно — она не импортирует FastAPI.
-- Прогон: `cd backend && uv run pytest`.
-- Фронт: `cd frontend && pnpm typecheck`.
+- `cd backend && uv run pytest` — правила статусов, SM-2, серия занятий, парсер контента, health.
+- `cd frontend && pnpm test` — сравнение с эталоном плюс **интеграционный тест `pglite.test.ts`**:
+  он накатывает настоящий датасет из `content/` в PGlite и прогоняет каждое эталонное решение.
+  Так ловятся расхождения между «большим» Postgres (на нём работает `validate`) и браузерным.
+- `cd frontend && pnpm typecheck` — три конфига: приложение, тесты (им нужны типы Node), конфиг Vite.
+  Браузерный код намеренно не видит типы Node.
+
+## CI и деплой
+- `validate.yml` — на каждый push и PR: Postgres в services, миграции, `validate`, `sync`, pytest;
+  отдельной job — typecheck, тесты и сборка фронта.
+- `pages.yml` — на push в main: `export-static`, сборка демо с `VITE_BASE`, деплой на Pages.
+  Pages настроен на источник **GitHub Actions**, а не ветку.
+
+Обе job используют `pnpm/action-setup` с явным `package_json_file: frontend/package.json` —
+в корне репозитория `package.json` нет.
 
 ## Definition of Done (фича)
 - [ ] Поведение соответствует записи в [`PRD.md`](PRD.md), включая edge cases.
-- [ ] Слои соблюдены: SQL в `repositories/`, логика в `services/` без импорта FastAPI, DTO в `schemas/`.
+- [ ] Слои соблюдены: SQL в `repositories/`, решения в `services/` без импорта FastAPI, DTO в `schemas/`.
 - [ ] Изменения схемы — Alembic-миграцией; `alembic upgrade head` проходит чисто.
 - [ ] Новый контент проходит `python -m tools validate`.
-- [ ] Есть тесты на бизнес-логику; `uv run pytest` зелёный.
+- [ ] Есть тесты на бизнес-логику; `uv run pytest` и `pnpm test` зелёные.
 - [ ] `pnpm typecheck` без ошибок; UI использует только токены тем, без захардкоженных hex.
+- [ ] Если правило продублировано на Python и TS — изменены обе стороны и оба набора тестов.
 - [ ] Секреты только через окружение.
 - [ ] Обновлены [`README.md`](README.md) (статус) и [`progress.md`](progress.md) (решение).
 

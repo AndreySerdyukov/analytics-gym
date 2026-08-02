@@ -1,5 +1,8 @@
 # analytics-gym
 
+[![validate](https://github.com/AndreySerdyukov/analytics-gym/actions/workflows/validate.yml/badge.svg)](https://github.com/AndreySerdyukov/analytics-gym/actions/workflows/validate.yml)
+[![pages](https://github.com/AndreySerdyukov/analytics-gym/actions/workflows/pages.yml/badge.svg)](https://github.com/AndreySerdyukov/analytics-gym/actions/workflows/pages.yml)
+
 **Живое демо: https://andreyserdyukov.github.io/analytics-gym/**
 
 Тренажёр для подготовки к собеседованиям на Data Analyst / Data Scientist: задачи по блокам,
@@ -28,9 +31,12 @@ SQL с автопроверкой прямо в браузере и повтор
 # 1. База — вариант А (Docker):
 docker compose up -d db
 
-# 1. База — вариант Б (локальный Postgres из brew, порт 5433):
+# 1. База — вариант Б (локальный Postgres из brew, порт 5433).
+#    LC_ALL обязателен: без него кластер на macOS падает при старте.
 LC_ALL=C pg_ctl -D /opt/homebrew/var/postgresql@16 -o "-p 5433" -l /tmp/pg5433.log start
-createdb -p 5433 -O analytics_gym analytics_gym   # один раз, роль создаётся отдельно
+#    Один раз — роль и база:
+psql -p 5433 -d postgres -c "CREATE ROLE analytics_gym LOGIN PASSWORD 'analytics_gym'"
+createdb -p 5433 -O analytics_gym analytics_gym
 
 # 2. Backend + контент
 cd backend
@@ -52,12 +58,25 @@ pnpm dev                               # http://localhost:5173
 cd backend
 uv run python -m tools new-task sql "Retention D7 по когортам"  # создать задачу по шаблону
 uv run python -m tools new-note sql "Оконные функции"           # создать конспект теории
+uv run python -m tools new-dataset sql "Интернет-магазин v2"    # создать датасет
 uv run python -m tools validate                                 # проверить формат и прогнать эталонные SQL
 uv run python -m tools sync                                     # обновить базу из content/
+uv run python -m tools export-static                            # content.json для демо
 ```
 
 `validate` выполняет каждое эталонное решение на живом Postgres поверх его датасета — опечатка
 в решении или разъехавшийся датасет обнаруживаются сразу.
+
+Формат контента:
+
+- **задача** — `content/<блок>/tasks/NNN-имя.md`: frontmatter плюс разделы `## Условие`,
+  `## Решение` (первый ```sql-блок становится эталоном), `## Разбор`;
+- **конспект** — `content/theory/<блок>/NNN-имя.md`; вопросы из раздела `## Карточки`
+  (`### Q: …` и ответ следом) попадают в повторение;
+- **датасет** — `content/<блок>/datasets/имя.sql`: метаданные в комментариях `-- title:` и
+  `-- description:`, маркер `-- seed` делит структуру и наполнение.
+
+Новый блок добавляется правкой `content/blocks.yaml` — код менять не нужно.
 
 ## Структура
 
@@ -79,7 +98,7 @@ frontend/    React; весь UI ходит за данными через инт
 ## Проверки
 
 ```bash
-cd backend  && uv run pytest          # логика статусов, парсер контента, health
+cd backend  && uv run pytest          # статусы задач, SM-2, серия занятий, парсер контента
 cd frontend && pnpm test              # сравнение с эталоном + прогон всех задач в PGlite
 cd frontend && pnpm typecheck         # строгий TypeScript
 ```
@@ -87,6 +106,13 @@ cd frontend && pnpm typecheck         # строгий TypeScript
 Тест `pglite.test.ts` накатывает настоящий датасет из `content/` в PGlite и выполняет каждое
 эталонное решение. Так ловятся расхождения между «большим» Postgres, на котором работает
 `validate`, и браузерным, в котором решает пользователь.
+
+Алгоритм SM-2 существует дважды — на Python для бэкенда и на TypeScript для демо, которое живёт
+без него. Обе реализации проходят один и тот же список тест-кейсов (`tests/test_srs.py` и
+`src/data/srs.test.ts`), поэтому разъехаться незаметно не могут.
+
+Те же проверки гоняет CI на каждый push и pull request, а демо пересобирается и деплоится
+автоматически при пуше в `main`.
 
 ## Разделы
 
