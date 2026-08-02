@@ -139,7 +139,7 @@ export function BlockPage({ blocks }: { blocks: Block[] }) {
               <button
                 type="button"
                 onClick={() => setAllTagsShown(true)}
-                className="rounded-full px-3 py-1 text-xs font-semibold text-accent"
+                className="rounded-full px-3 py-1 text-xs font-semibold text-accent-ink"
               >
                 ещё {hiddenTagsCount}
               </button>
@@ -148,7 +148,7 @@ export function BlockPage({ blocks }: { blocks: Block[] }) {
         )}
 
         {hasFilters && (
-          <button type="button" onClick={resetAll} className="text-xs font-semibold text-accent underline">
+          <button type="button" onClick={resetAll} className="text-xs font-semibold text-accent-ink underline">
             Сбросить фильтры
           </button>
         )}

@@ -12,7 +12,8 @@ import type { Extension } from '@codemirror/state'
 import { tags } from '@lezer/highlight'
 
 const highlightStyle = HighlightStyle.define([
-  { tag: [tags.keyword, tags.operatorKeyword, tags.modifier], color: 'var(--gym-accent)', fontWeight: '600' },
+  // Ключевые слова — текст на светлой подложке редактора, поэтому затемнённый акцент.
+  { tag: [tags.keyword, tags.operatorKeyword, tags.modifier], color: 'var(--gym-accent-ink)', fontWeight: '600' },
   { tag: [tags.string, tags.special(tags.string)], color: 'var(--gym-success)' },
   { tag: [tags.number, tags.bool, tags.null], color: 'var(--gym-warning)' },
   { tag: [tags.comment, tags.lineComment, tags.blockComment], color: 'var(--gym-muted)', fontStyle: 'italic' },

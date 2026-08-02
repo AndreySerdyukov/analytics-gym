@@ -103,7 +103,7 @@ export function ReviewPage({ onReviewed }: { onReviewed: () => void }) {
             hint="Карточки берутся из конспектов теории и возвращаются по алгоритму SM-2"
           />
         )}
-        <Link to="/theory" className="inline-block text-sm font-semibold text-accent underline">
+        <Link to="/theory" className="inline-block text-sm font-semibold text-accent-ink underline">
           Открыть теорию
         </Link>
       </div>

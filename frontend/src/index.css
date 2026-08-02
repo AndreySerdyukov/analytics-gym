@@ -12,7 +12,14 @@
   --color-border: var(--gym-border);
   --color-text: var(--gym-text);
   --color-muted: var(--gym-muted);
+  /*
+    Акцент живёт в двух ролях. `accent` — брендовый оранжевый: заливки, рамки, индикаторы,
+    им достаточно 3:1 как non-text UI. `accent-ink` — затемнённый вариант для случаев,
+    где акцент работает текстом по светлому фону (ссылки, ключевые слова, текстовые кнопки):
+    брендовый тон там даёт 3.2:1 и не проходит AA.
+  */
   --color-accent: var(--gym-accent);
+  --color-accent-ink: var(--gym-accent-ink);
   --color-accent-soft: var(--gym-accent-soft);
   --color-on-accent: var(--gym-on-accent);
   --color-success: var(--gym-success);
@@ -39,7 +46,14 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
 }
 
-/* Светлая тема: много воздуха, белые карточки, один насыщенный акцент. */
+/*
+  Светлая тема: много воздуха, белые карточки, один насыщенный акцент.
+  Текст на акценте почти чёрный, а не белый: на оранжевом белый даёт 3.2:1 и режется
+  на мелком кегле кнопок и вкладок.
+  Статусные цвета намеренно уведены от тона акцента — danger в холодный малиновый,
+  warning в жёлтый: иначе на StatsPage полосы прогресса и неудач читаются как один ряд,
+  а в подсветке SQL keyword/number/function сливаются в тёплое пятно.
+*/
 :root,
 :root[data-theme='light'] {
   --gym-bg: #f5f6f8;
@@ -48,23 +62,28 @@
   --gym-border: #e3e6ea;
   --gym-text: #14161a;
   --gym-muted: #6b7280;
-  --gym-accent: #2f4ff7;
-  --gym-accent-soft: #e7ebff;
-  --gym-on-accent: #ffffff;
+  --gym-accent: #ff5533;
+  --gym-accent-ink: #c2410c;
+  --gym-accent-soft: #ffece7;
+  --gym-on-accent: #1a0f0a;
   --gym-success: #17864a;
   --gym-success-soft: #e2f5e9;
-  --gym-warning: #a2650a;
-  --gym-warning-soft: #fdf1dc;
-  --gym-danger: #c0362c;
-  --gym-danger-soft: #fdeae8;
+  --gym-warning: #8a6a00;
+  --gym-warning-soft: #fff4d1;
+  --gym-danger: #c62f4d;
+  --gym-danger-soft: #fce8ec;
   --gym-heat-0: #eaecf0;
-  --gym-heat-1: #ccd5fb;
-  --gym-heat-2: #9aabf7;
-  --gym-heat-3: #6480f4;
-  --gym-heat-4: #2f4ff7;
+  --gym-heat-1: #ffdfd6;
+  --gym-heat-2: #ffb59f;
+  --gym-heat-3: #ff8362;
+  --gym-heat-4: #ff5533;
 }
 
-/* Тёмная тема: те же роли, другие значения. Контраст держим не ниже AA. */
+/*
+  Тёмная тема: те же роли, другие значения. Контраст держим не ниже AA.
+  Здесь оранжевый читается сам по себе, поэтому акцент ближе к брендовому, а warning
+  берёт фирменный жёлтый напрямую — на светлом фоне он был бы нечитаем.
+*/
 :root[data-theme='dark'] {
   --gym-bg: #0d0f13;
   --gym-surface: #161a21;
@@ -72,20 +91,21 @@
   --gym-border: #2a3038;
   --gym-text: #e8eaed;
   --gym-muted: #9aa3af;
-  --gym-accent: #7b93ff;
-  --gym-accent-soft: #1e2748;
+  --gym-accent: #ff6a45;
+  --gym-accent-ink: #ff8a6b;
+  --gym-accent-soft: #3a1c14;
   --gym-on-accent: #0d0f13;
   --gym-success: #58cc8a;
   --gym-success-soft: #16301f;
-  --gym-warning: #e0ab4a;
-  --gym-warning-soft: #332714;
-  --gym-danger: #f0837a;
-  --gym-danger-soft: #351d1b;
+  --gym-warning: #ffcd1e;
+  --gym-warning-soft: #3a2f0d;
+  --gym-danger: #f57a92;
+  --gym-danger-soft: #3a1a24;
   --gym-heat-0: #1d222b;
-  --gym-heat-1: #263566;
-  --gym-heat-2: #35509e;
-  --gym-heat-3: #4c6ed0;
-  --gym-heat-4: #7b93ff;
+  --gym-heat-1: #4a2418;
+  --gym-heat-2: #7d3520;
+  --gym-heat-3: #bf4a2c;
+  --gym-heat-4: #ff6a45;
 }
 
 html {
@@ -136,7 +156,8 @@ body {
   margin-top: 0.35em;
 }
 .markdown a {
-  color: var(--gym-accent);
+  /* Ссылка — текст, поэтому затемнённый вариант акцента, а не брендовый. */
+  color: var(--gym-accent-ink);
   text-decoration: underline;
 }
 .markdown strong {
@@ -225,7 +246,8 @@ body {
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-section {
-  color: var(--gym-accent);
+  /* Блок кода стоит на surface-alt: брендовый акцент дал бы там около 3:1. */
+  color: var(--gym-accent-ink);
   font-weight: 600;
 }
 .hljs-string,
