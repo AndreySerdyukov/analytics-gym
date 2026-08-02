@@ -1,0 +1,37 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+.vite/
+
+# --- Секреты и креды (только через окружение) ---
+.env
+.env.*
+!.env.example
+*-creds.json
+*_token.json
+
+# --- Дампы и локальные БД ---
+*.db
+*.sqlite3
+*.dump
+# .sql-файлы игнорируем везде, КРОМЕ датасетов в content/ — они часть контента репо.
+*.sql
+!content/**/*.sql
+
+# --- Артефакты статического демо-билда ---
+frontend/public/content.json
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+.DS_Store

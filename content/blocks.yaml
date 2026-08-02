@@ -1,0 +1,60 @@
+# Справочник блоков тренажёра и тем внутри них.
+# Порядок в этом файле определяет порядок вкладок в интерфейсе.
+# Добавление блока не требует изменений в коде: достаточно правки здесь и `sync`.
+
+blocks:
+  - slug: sql
+    title: SQL
+    description: Оконные функции, когорты, retention, продуктовые витрины
+    icon: "🗃"
+    topics:
+      - slug: basics
+        title: Базовые выборки и агрегации
+      - slug: joins
+        title: Соединения и антисоединения
+      - slug: window-functions
+        title: Оконные функции
+      - slug: cohorts
+        title: Когорты и retention
+      - slug: product-metrics
+        title: Продуктовые метрики
+
+  - slug: stats-ab
+    title: Статистика и A/B
+    description: Проверка гипотез, размер выборки, подводные камни экспериментов
+    icon: "📊"
+    topics:
+      - slug: distributions
+        title: Распределения и оценки
+      - slug: hypothesis-testing
+        title: Проверка гипотез
+      - slug: experiment-design
+        title: Дизайн экспериментов
+      - slug: pitfalls
+        title: Подводные камни
+
+  - slug: python
+    title: Python и pandas
+    description: Обработка данных, алгоритмические задачи, чистый код
+    icon: "🐍"
+    topics:
+      - slug: core
+        title: Язык и структуры данных
+      - slug: pandas
+        title: pandas и обработка данных
+      - slug: algorithms
+        title: Алгоритмы
+
+  - slug: ml
+    title: ML и DL
+    description: Классические модели, метрики качества, нейросети, продуктовые кейсы
+    icon: "🤖"
+    topics:
+      - slug: classic
+        title: Классический ML
+      - slug: metrics
+        title: Метрики качества
+      - slug: deep-learning
+        title: Нейросети
+      - slug: cases
+        title: Продуктовые кейсы

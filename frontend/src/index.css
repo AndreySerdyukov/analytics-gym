@@ -1,0 +1,229 @@
+@import 'tailwindcss';
+
+/*
+  Дизайн-токены. Утилиты Tailwind (bg-surface, text-muted, …) ссылаются на CSS-переменные,
+  а тему переключает атрибут data-theme на <html>. Поэтому ни один компонент не содержит
+  захардкоженного цвета: чтобы перекрасить приложение, достаточно править этот файл.
+*/
+@theme {
+  --color-bg: var(--gym-bg);
+  --color-surface: var(--gym-surface);
+  --color-surface-alt: var(--gym-surface-alt);
+  --color-border: var(--gym-border);
+  --color-text: var(--gym-text);
+  --color-muted: var(--gym-muted);
+  --color-accent: var(--gym-accent);
+  --color-accent-soft: var(--gym-accent-soft);
+  --color-on-accent: var(--gym-on-accent);
+  --color-success: var(--gym-success);
+  --color-success-soft: var(--gym-success-soft);
+  --color-warning: var(--gym-warning);
+  --color-warning-soft: var(--gym-warning-soft);
+  --color-danger: var(--gym-danger);
+  --color-danger-soft: var(--gym-danger-soft);
+
+  --radius-card: 1.25rem;
+  --font-sans:
+    'Inter', 'Golos Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+}
+
+/* Светлая тема: много воздуха, белые карточки, один насыщенный акцент. */
+:root,
+:root[data-theme='light'] {
+  --gym-bg: #f5f6f8;
+  --gym-surface: #ffffff;
+  --gym-surface-alt: #f0f2f5;
+  --gym-border: #e3e6ea;
+  --gym-text: #14161a;
+  --gym-muted: #6b7280;
+  --gym-accent: #2f4ff7;
+  --gym-accent-soft: #e7ebff;
+  --gym-on-accent: #ffffff;
+  --gym-success: #17864a;
+  --gym-success-soft: #e2f5e9;
+  --gym-warning: #a2650a;
+  --gym-warning-soft: #fdf1dc;
+  --gym-danger: #c0362c;
+  --gym-danger-soft: #fdeae8;
+}
+
+/* Тёмная тема: те же роли, другие значения. Контраст держим не ниже AA. */
+:root[data-theme='dark'] {
+  --gym-bg: #0d0f13;
+  --gym-surface: #161a21;
+  --gym-surface-alt: #1d222b;
+  --gym-border: #2a3038;
+  --gym-text: #e8eaed;
+  --gym-muted: #9aa3af;
+  --gym-accent: #7b93ff;
+  --gym-accent-soft: #1e2748;
+  --gym-on-accent: #0d0f13;
+  --gym-success: #58cc8a;
+  --gym-success-soft: #16301f;
+  --gym-warning: #e0ab4a;
+  --gym-warning-soft: #332714;
+  --gym-danger: #f0837a;
+  --gym-danger-soft: #351d1b;
+}
+
+html {
+  background-color: var(--gym-bg);
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--gym-bg);
+  color: var(--gym-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Разметка Markdown: условие, разбор, заметки. Без плагина typography — нужно немногое. */
+.markdown {
+  line-height: 1.65;
+}
+.markdown > * + * {
+  margin-top: 0.9em;
+}
+.markdown h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1.6em;
+}
+.markdown h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.4em;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 1.4em;
+}
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+.markdown li + li {
+  margin-top: 0.35em;
+}
+.markdown a {
+  color: var(--gym-accent);
+  text-decoration: underline;
+}
+.markdown strong {
+  font-weight: 650;
+}
+.markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--gym-surface-alt);
+  border: 1px solid var(--gym-border);
+  border-radius: 0.375rem;
+  /* Горизонтальный padding маленький: иначе перед запятой после `код` появляется зазор. */
+  padding: 0.1em 0.25em;
+}
+.markdown pre {
+  background: var(--gym-surface-alt);
+  border: 1px solid var(--gym-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.markdown pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+.markdown th,
+.markdown td {
+  border: 1px solid var(--gym-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.markdown th {
+  background: var(--gym-surface-alt);
+  font-weight: 600;
+}
+.markdown blockquote {
+  border-left: 3px solid var(--gym-accent);
+  padding-left: 1rem;
+  color: var(--gym-muted);
+}
+
+/*
+  Редактор кода. Собственная тёмная тема CodeMirror даёт слишком тусклый основной текст:
+  ключевые слова читаются, а идентификаторы почти сливаются с фоном. Возвращаем контраст,
+  подставляя цвета приложения; подсветку ключевых слов при этом не трогаем.
+*/
+.cm-editor {
+  background: var(--gym-surface) !important;
+}
+.cm-editor .cm-content,
+.cm-editor .cm-line {
+  color: var(--gym-text);
+  caret-color: var(--gym-accent);
+}
+.cm-editor .cm-gutters {
+  background: var(--gym-surface-alt) !important;
+  border-right: 1px solid var(--gym-border) !important;
+  color: var(--gym-muted) !important;
+}
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+.cm-editor .cm-activeLine,
+.cm-editor .cm-activeLineGutter {
+  background: transparent !important;
+}
+.cm-editor .cm-selectionBackground,
+.cm-editor .cm-content ::selection {
+  background: var(--gym-accent-soft) !important;
+}
+
+/*
+  Подсветка синтаксиса (rehype-highlight выдаёт классы highlight.js).
+  Красим через те же токены, поэтому обе темы работают без второго CSS-файла.
+*/
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section {
+  color: var(--gym-accent);
+  font-weight: 600;
+}
+.hljs-string,
+.hljs-attr,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--gym-success);
+}
+.hljs-number,
+.hljs-meta {
+  color: var(--gym-warning);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--gym-muted);
+  font-style: italic;
+}
+.hljs-title,
+.hljs-name,
+.hljs-built_in {
+  color: var(--gym-danger);
+}

@@ -1,0 +1,23 @@
+# Локальный Postgres для разработки analytics-gym.
+# Запуск: docker compose up -d db
+# Порт 5433, чтобы не конфликтовать с другими локальными проектами на 5432.
+services:
+  db:
+    image: postgres:16
+    container_name: analytics-gym-db
+    environment:
+      POSTGRES_DB: analytics_gym
+      POSTGRES_USER: analytics_gym
+      POSTGRES_PASSWORD: analytics_gym   # локальная разработка; в проде — только через окружение
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics_gym -d analytics_gym"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pg_data:
