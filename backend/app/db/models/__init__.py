@@ -16,6 +16,7 @@ from app.db.models.personal import (
     GRADE_HARD,
     TASK_STATUSES,
     Attempt,
+    NoteProgress,
     ReviewLog,
     ReviewState,
     TaskProgress,
@@ -36,6 +37,7 @@ __all__ = [
     "Card",
     "Attempt",
     "TaskProgress",
+    "NoteProgress",
     "ReviewState",
     "ReviewLog",
 ]

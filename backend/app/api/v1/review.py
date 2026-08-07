@@ -9,6 +9,8 @@ from app.schemas.review import (
     GradeIn,
     NoteDetailOut,
     NoteListItemOut,
+    NoteProgressOut,
+    NoteReadIn,
     ReviewStateOut,
     ReviewSummaryOut,
 )
@@ -51,3 +53,11 @@ def list_notes(
 def get_note(slug: str, db: Session = Depends(get_db)) -> NoteDetailOut:
     """Полный текст конспекта."""
     return review_service.get_note(db, slug)
+
+
+@router.put("/notes/{slug}/read", response_model=NoteProgressOut)
+def set_note_read(
+    slug: str, payload: NoteReadIn, db: Session = Depends(get_db)
+) -> NoteProgressOut:
+    """Ставит или снимает отметку «прочитано». Повторный вызов ничего не ломает."""
+    return review_service.set_note_read(db, slug, payload.is_read)

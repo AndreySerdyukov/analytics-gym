@@ -1,6 +1,6 @@
 """DTO режима повторения: карточки, оценки, конспекты теории."""
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,9 +54,25 @@ class NoteListItemOut(BaseModel):
     title: str
     tags: list[str]
     cards_count: int
+    # Отметка о прочтении. Персональные данные: в публичный репозиторий не попадает.
+    is_read: bool = False
 
 
 class NoteDetailOut(NoteListItemOut):
     """Полный конспект."""
 
     body_md: str
+
+
+class NoteReadIn(BaseModel):
+    """Отметка «прочитано»: ставится и снимается одним и тем же запросом."""
+
+    is_read: bool = True
+
+
+class NoteProgressOut(BaseModel):
+    """Состояние конспекта после отметки."""
+
+    slug: str
+    is_read: bool
+    read_at: datetime | None

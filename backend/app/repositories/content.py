@@ -3,7 +3,7 @@
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.models import Block, Dataset, Task, TaskProgress, Topic
+from app.db.models import Block, Dataset, NoteProgress, Task, TaskProgress, TheoryNote, Topic
 
 
 def list_blocks(db: Session) -> list[Block]:
@@ -34,6 +34,28 @@ def block_task_counts(db: Session) -> dict[str, tuple[int, int]]:
         .group_by(Block.slug)
     )
     return {slug: (total, solved) for slug, total, solved in db.execute(stmt)}
+
+
+def block_note_counts(db: Session) -> dict[str, tuple[int, int]]:
+    """Сводка по блокам: (всего конспектов, прочитано). Ключ — slug блока.
+
+    Отдельным запросом от `block_task_counts` намеренно: два outer join двух «многих» таблиц
+    в одной выборке дали бы декартово произведение и молча раздули оба счётчика.
+    """
+    stmt = (
+        select(
+            Block.slug,
+            func.count(TheoryNote.id),
+            func.count(NoteProgress.id).filter(NoteProgress.is_read.is_(True)),
+        )
+        .select_from(Block)
+        .outerjoin(
+            TheoryNote, (TheoryNote.block_id == Block.id) & (TheoryNote.is_archived.is_(False))
+        )
+        .outerjoin(NoteProgress, NoteProgress.note_id == TheoryNote.id)
+        .group_by(Block.slug)
+    )
+    return {slug: (total, read) for slug, total, read in db.execute(stmt)}
 
 
 def _tasks_base_query() -> Select:

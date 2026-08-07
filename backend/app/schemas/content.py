@@ -26,6 +26,9 @@ class BlockOut(BaseModel):
     topics: list[TopicOut] = []
     tasks_total: int = 0
     tasks_solved: int = 0
+    # Сводка по теории едет вместе с блоком: хабу блока и дашборду не нужен отдельный запрос.
+    notes_total: int = 0
+    notes_read: int = 0
 
 
 class DatasetOut(BaseModel):

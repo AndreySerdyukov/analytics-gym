@@ -7,11 +7,13 @@ from datetime import UTC, date, datetime
 
 from sqlalchemy.orm import Session
 
+from app.repositories import personal as personal_repo
 from app.repositories import review as review_repo
 from app.schemas.review import (
     CardOut,
     NoteDetailOut,
     NoteListItemOut,
+    NoteProgressOut,
     ReviewStateOut,
     ReviewSummaryOut,
 )
@@ -99,7 +101,7 @@ def grade_card(
 
 
 def list_notes(db: Session, block_slug: str | None = None) -> list[NoteListItemOut]:
-    """Конспекты теории с темой и числом карточек."""
+    """Конспекты теории с темой, числом карточек и отметкой прочтения."""
     return [
         NoteListItemOut(
             slug=note.slug,
@@ -108,8 +110,11 @@ def list_notes(db: Session, block_slug: str | None = None) -> list[NoteListItemO
             title=note.title,
             tags=list(note.tags or []),
             cards_count=cards_count,
+            is_read=is_read,
         )
-        for note, block_slug_, topic_slug, cards_count in review_repo.list_notes(db, block_slug)
+        for note, block_slug_, topic_slug, cards_count, is_read in review_repo.list_notes(
+            db, block_slug
+        )
     ]
 
 
@@ -118,7 +123,7 @@ def get_note(db: Session, slug: str) -> NoteDetailOut:
     row = review_repo.get_note_by_slug(db, slug)
     if row is None:
         raise NotFoundError(f"Конспект не найден: {slug}")
-    note, block_slug_, topic_slug, cards_count = row
+    note, block_slug_, topic_slug, cards_count, is_read = row
 
     return NoteDetailOut(
         slug=note.slug,
@@ -127,5 +132,27 @@ def get_note(db: Session, slug: str) -> NoteDetailOut:
         title=note.title,
         tags=list(note.tags or []),
         cards_count=cards_count,
+        is_read=is_read,
         body_md=note.body_md,
     )
+
+
+def set_note_read(db: Session, slug: str, is_read: bool) -> NoteProgressOut:
+    """Ставит или снимает отметку «прочитано».
+
+    Снятие отметки очищает дату прочтения: «прочитал, потом передумал» не должно оставлять
+    в истории дату, которой уже ничего не соответствует.
+    """
+    row = review_repo.get_note_by_slug(db, slug)
+    if row is None:
+        raise NotFoundError(f"Конспект не найден: {slug}")
+    note = row[0]
+
+    saved = personal_repo.set_note_read(
+        db,
+        note_id=note.id,
+        is_read=is_read,
+        read_at=datetime.now(UTC) if is_read else None,
+    )
+    db.commit()
+    return NoteProgressOut(slug=note.slug, is_read=saved.is_read, read_at=saved.read_at)

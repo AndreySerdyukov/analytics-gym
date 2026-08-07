@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Attempt, TaskProgress
+from app.db.models import Attempt, NoteProgress, TaskProgress
 
 
 def create_attempt(
@@ -77,5 +77,27 @@ def set_status(db: Session, *, task_id: int, status: str) -> TaskProgress:
     """Ручная смена статуса задачи (например, отметить «сдался»)."""
     progress = get_or_create_progress(db, task_id)
     progress.status = status
+    db.flush()
+    return progress
+
+
+def get_or_create_note_progress(db: Session, note_id: int) -> NoteProgress:
+    """Прогресс по конспекту, создавая пустую запись при первом обращении."""
+    stmt = select(NoteProgress).where(NoteProgress.note_id == note_id)
+    progress = db.scalars(stmt).first()
+    if progress is None:
+        progress = NoteProgress(note_id=note_id, is_read=False)
+        db.add(progress)
+        db.flush()
+    return progress
+
+
+def set_note_read(
+    db: Session, *, note_id: int, is_read: bool, read_at: datetime | None
+) -> NoteProgress:
+    """Ставит или снимает отметку «прочитано». Значение read_at выбирает services."""
+    progress = get_or_create_note_progress(db, note_id)
+    progress.is_read = is_read
+    progress.read_at = read_at
     db.flush()
     return progress

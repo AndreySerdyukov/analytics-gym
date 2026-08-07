@@ -74,6 +74,28 @@ class TaskProgress(Base):
     )
 
 
+class NoteProgress(Base):
+    """Прогресс по конспекту теории: отметка «прочитано».
+
+    Отдельная таблица, а не поле в theory_notes: приложение не пишет в контентные таблицы,
+    иначе пересинк контента стирал бы отметки. `is_read` держим отдельным полем, а не выводим
+    из `read_at IS NOT NULL`: снятие отметки очищает дату, а счётчик прочитанного при этом
+    остаётся тривиальным.
+    """
+
+    __tablename__ = "note_progress"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("theory_notes.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    is_read: Mapped[bool] = mapped_column(default=False, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class ReviewState(Base):
     """Текущее состояние карточки в SM-2: когда показать снова и насколько она «лёгкая»."""
 

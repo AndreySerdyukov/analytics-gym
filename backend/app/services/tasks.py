@@ -36,11 +36,13 @@ def _to_list_item(
 
 
 def list_blocks(db: Session) -> list[BlockOut]:
-    """Блоки со сводкой прогресса для дашборда."""
+    """Блоки со сводкой по практике и теории для дашборда и хаба блока."""
     counts = content_repo.block_task_counts(db)
+    note_counts = content_repo.block_note_counts(db)
     blocks: list[BlockOut] = []
     for block in content_repo.list_blocks(db):
         total, solved = counts.get(block.slug, (0, 0))
+        notes_total, notes_read = note_counts.get(block.slug, (0, 0))
         topics = [
             TopicOut.model_validate(topic)
             for topic in sorted(block.topics, key=lambda t: (t.sort_order, t.slug))
@@ -56,6 +58,8 @@ def list_blocks(db: Session) -> list[BlockOut]:
                 topics=topics,
                 tasks_total=total,
                 tasks_solved=solved,
+                notes_total=notes_total,
+                notes_read=notes_read,
             )
         )
     return blocks
