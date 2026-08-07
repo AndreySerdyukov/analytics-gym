@@ -209,6 +209,47 @@ body {
 }
 
 /*
+  Спойлер в конспектах: ответы к разделу «Проверь себя» открываются только по клику.
+  Собственный маркер вместо системного — системный треугольник в Safari и Chrome выглядит
+  по-разному и не подхватывает цвет темы.
+*/
+.markdown details {
+  border: 1px solid var(--gym-border);
+  border-radius: 0.75rem;
+  background: var(--gym-surface-alt);
+  padding: 0.75rem 1rem;
+}
+/* Ритмика задана как `.markdown > * + *` и внутрь details не достаёт: без этого абзацы слипаются. */
+.markdown details > * + * {
+  margin-top: 0.9em;
+}
+.markdown summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--gym-accent-ink);
+  list-style: none;
+}
+.markdown summary::-webkit-details-marker {
+  display: none;
+}
+.markdown summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 0.5em;
+  transition: transform 0.15s;
+}
+.markdown details[open] > summary::before {
+  transform: rotate(90deg);
+}
+.markdown details[open] > summary {
+  margin-bottom: 0.75rem;
+}
+.markdown summary:focus-visible {
+  outline: 2px solid var(--gym-accent);
+  outline-offset: 2px;
+}
+
+/*
   Редактор кода. Собственная тёмная тема CodeMirror даёт слишком тусклый основной текст:
   ключевые слова читаются, а идентификаторы почти сливаются с фоном. Возвращаем контраст,
   подставляя цвета приложения; подсветку ключевых слов при этом не трогаем.
