@@ -8,6 +8,7 @@ import type {
   FilterOptions,
   NoteDetail,
   NoteListItem,
+  NoteProgress,
   Progress,
   ReviewState,
   ReviewSummary,
@@ -117,6 +118,13 @@ export class ApiDataSource implements DataSource {
 
   getNote(slug: string): Promise<NoteDetail> {
     return request<NoteDetail>(`/notes/${encodeURIComponent(slug)}`)
+  }
+
+  setNoteRead(slug: string, isRead: boolean): Promise<NoteProgress> {
+    return request<NoteProgress>(`/notes/${encodeURIComponent(slug)}/read`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_read: isRead }),
+    })
   }
 
   getStats(): Promise<Stats> {

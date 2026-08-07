@@ -19,6 +19,9 @@ export interface Block {
   topics: Topic[]
   tasks_total: number
   tasks_solved: number
+  /** Сводка по теории блока: приходит вместе с блоком, чтобы хабу не нужен был свой запрос. */
+  notes_total: number
+  notes_read: number
 }
 
 /** Данные для SQL-раннера: этот SQL накатывается в PGlite перед решением задачи. */
@@ -123,10 +126,18 @@ export interface NoteListItem {
   title: string
   tags: string[]
   cards_count: number
+  is_read: boolean
 }
 
 export interface NoteDetail extends NoteListItem {
   body_md: string
+}
+
+/** Состояние конспекта после отметки о прочтении. */
+export interface NoteProgress {
+  slug: string
+  is_read: boolean
+  read_at: string | null
 }
 
 /** День в календаре занятий. */

@@ -13,6 +13,7 @@ import type {
   FilterOptions,
   NoteDetail,
   NoteListItem,
+  NoteProgress,
   Progress,
   Stats,
   ReviewState,
@@ -38,6 +39,7 @@ export interface DataSource {
   reviewSummary(): Promise<ReviewSummary>
   listNotes(blockSlug?: string): Promise<NoteListItem[]>
   getNote(slug: string): Promise<NoteDetail>
+  setNoteRead(slug: string, isRead: boolean): Promise<NoteProgress>
 
   /** Статистика по личной активности: прогресс, слабые темы, календарь занятий. */
   getStats(): Promise<Stats>

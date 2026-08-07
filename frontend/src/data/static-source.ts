@@ -16,6 +16,7 @@ import type {
   FilterOptions,
   NoteDetail,
   NoteListItem,
+  NoteProgress,
   Progress,
   ReviewState,
   ReviewSummary,
@@ -29,6 +30,7 @@ import type {
 const PROGRESS_KEY = 'gym-progress'
 const REVIEW_KEY = 'gym-review'
 const ACTIVITY_KEY = 'gym-activity'
+const NOTES_READ_KEY = 'gym-notes-read'
 
 /** Календарь занятий показывает примерно квартал — как и в локальном режиме. */
 const ACTIVITY_DAYS = 91
@@ -110,7 +112,8 @@ interface RawCard {
 }
 
 interface RawContent {
-  blocks: Omit<Block, 'tasks_total' | 'tasks_solved'>[]
+  // Счётчиков в content.json нет: они зависят от прогресса и считаются здесь.
+  blocks: Omit<Block, 'tasks_total' | 'tasks_solved' | 'notes_total' | 'notes_read'>[]
   datasets: NonNullable<TaskDetail['dataset']>[]
   tasks: RawTask[]
   notes: RawNote[]
@@ -140,6 +143,23 @@ function saveProgressMap(map: Record<string, Progress>): void {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(map))
   } catch {
     // Приватный режим браузера: прогресс просто не сохранится.
+  }
+}
+
+function loadReadsMap(): Record<string, NoteProgress> {
+  try {
+    const raw = localStorage.getItem(NOTES_READ_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, NoteProgress>) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveReadsMap(map: Record<string, NoteProgress>): void {
+  try {
+    localStorage.setItem(NOTES_READ_KEY, JSON.stringify(map))
+  } catch {
+    // Приватный режим браузера: отметки просто не сохранятся.
   }
 }
 
@@ -203,17 +223,27 @@ export class StaticDataSource implements DataSource {
       title: note.title,
       tags: note.tags,
       cards_count: content.cards.filter((card) => card.note_slug === note.slug).length,
+      is_read: loadReadsMap()[note.slug]?.is_read ?? false,
     }
   }
 
   async listBlocks(): Promise<Block[]> {
     const content = await this.load()
     const progress = loadProgressMap()
+    const reads = loadReadsMap()
 
     return content.blocks.map((block) => {
       const tasks = content.tasks.filter((task) => task.block_slug === block.slug)
       const solved = tasks.filter((task) => progress[task.slug]?.status === 'solved').length
-      return { ...block, tasks_total: tasks.length, tasks_solved: solved }
+      const notes = content.notes.filter((note) => note.block_slug === block.slug)
+      const read = notes.filter((note) => reads[note.slug]?.is_read).length
+      return {
+        ...block,
+        tasks_total: tasks.length,
+        tasks_solved: solved,
+        notes_total: notes.length,
+        notes_read: read,
+      }
     })
   }
 
@@ -378,6 +408,20 @@ export class StaticDataSource implements DataSource {
     const note = content.notes.find((candidate) => candidate.slug === slug)
     if (!note) throw new Error(`Конспект не найден: ${slug}`)
     return { ...this.toNoteListItem(note, content), body_md: note.body_md }
+  }
+
+  async setNoteRead(slug: string, isRead: boolean): Promise<NoteProgress> {
+    const map = loadReadsMap()
+    // Снятие отметки очищает дату — как и на бэкенде.
+    const next: NoteProgress = {
+      slug,
+      is_read: isRead,
+      read_at: isRead ? new Date().toISOString() : null,
+    }
+    map[slug] = next
+    saveReadsMap(map)
+    // recordActivity намеренно не вызываем: календарь занятий про решение и повторение.
+    return next
   }
 
   async getStats(): Promise<Stats> {
