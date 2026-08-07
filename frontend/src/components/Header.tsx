@@ -1,4 +1,4 @@
-/** Шапка с переключением блоков и разделами теории и повторения. */
+/** Шапка с переключением блоков и сквозными разделами: повторение и статистика. */
 
 import { NavLink } from 'react-router-dom'
 import type { Block } from '../data/types'
@@ -22,6 +22,7 @@ export function Header({ blocks, dueToday }: { blocks: Block[]; dueToday: number
 
         {/* На узком экране вкладки уезжают в горизонтальный скролл, а не переносятся. */}
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+          {/* Без `end`: вкладка блока остаётся активной и на /b/:slug/theory, и на /practice. */}
           {blocks.map((block) => (
             <NavLink key={block.slug} to={`/b/${block.slug}`} className={linkClass}>
               {block.icon && <span className="mr-1.5">{block.icon}</span>}
@@ -31,9 +32,6 @@ export function Header({ blocks, dueToday }: { blocks: Block[]; dueToday: number
 
           <span className="mx-1 h-5 w-px shrink-0 bg-border" />
 
-          <NavLink to="/theory" className={linkClass}>
-            Теория
-          </NavLink>
           <NavLink to="/review" className={linkClass}>
             Повторение
             {dueToday > 0 && (

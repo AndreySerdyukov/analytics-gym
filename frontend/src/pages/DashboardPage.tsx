@@ -5,6 +5,24 @@ import { Card, EmptyState, ProgressBar, StatusBadge } from '../components/ui'
 import type { Block } from '../data/types'
 import { useAsync } from '../data/useAsync'
 
+/** Строка прогресса блока. Пустой раздел строку не рисует: сравнивать нечего. */
+function BlockProgress({ label, done, total }: { label: string; done: number; total: number }) {
+  if (total === 0) return null
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span className="text-muted">{label}</span>
+        <span className="font-semibold">
+          {done}/{total}
+        </span>
+      </div>
+      <div className="mt-1">
+        <ProgressBar value={done} total={total} />
+      </div>
+    </div>
+  )
+}
+
 export function DashboardPage({ blocks, dueToday }: { blocks: Block[]; dueToday: number }) {
   const inProgress = useAsync((source) => source.listTasks({ status: 'in_progress' }), [])
   const solvedTotal = blocks.reduce((sum, block) => sum + block.tasks_solved, 0)
@@ -42,23 +60,28 @@ export function DashboardPage({ blocks, dueToday }: { blocks: Block[]; dueToday:
         {blocks.map((block) => (
           <Link key={block.slug} to={`/b/${block.slug}`} className="group">
             <Card className="h-full transition-colors group-hover:border-accent">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold">
-                    {block.icon && <span className="mr-2">{block.icon}</span>}
-                    {block.title}
-                  </h2>
-                  {block.description && (
-                    <p className="mt-1 text-sm text-muted">{block.description}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-sm font-semibold text-muted">
-                  {block.tasks_solved}/{block.tasks_total}
-                </span>
+              <div>
+                <h2 className="text-xl font-bold">
+                  {block.icon && <span className="mr-2">{block.icon}</span>}
+                  {block.title}
+                </h2>
+                {block.description && (
+                  <p className="mt-1 text-sm text-muted">{block.description}</p>
+                )}
               </div>
 
-              <div className="mt-4">
-                <ProgressBar value={block.tasks_solved} total={block.tasks_total} />
+              {/* Пустую половину не показываем: полоса на нуле из скольких-то ничего не сообщает. */}
+              <div className="mt-4 space-y-2.5">
+                <BlockProgress
+                  label="Теория"
+                  done={block.notes_read}
+                  total={block.notes_total}
+                />
+                <BlockProgress
+                  label="Практика"
+                  done={block.tasks_solved}
+                  total={block.tasks_total}
+                />
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5">

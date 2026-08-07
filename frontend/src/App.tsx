@@ -9,7 +9,10 @@ import { PracticePage } from './pages/PracticePage'
 import { ReviewPage } from './pages/ReviewPage'
 import { StatsPage } from './pages/StatsPage'
 import { TaskPage } from './pages/TaskPage'
-import { NotePage, TheoryListPage } from './pages/TheoryPage'
+import { LegacyNoteRedirect } from './pages/theory/LegacyNoteRedirect'
+import { NoteView } from './pages/theory/NoteView'
+import { TheoryIntro } from './pages/theory/TheoryIntro'
+import { TheoryLayout } from './pages/theory/TheoryLayout'
 
 /** Значение подставляется на этапе сборки: 'api' для dev/build, 'static' для demo-билда. */
 declare const __DATA_SOURCE__: 'api' | 'static'
@@ -43,9 +46,17 @@ export function App() {
             />
             <Route path="/b/:blockSlug" element={<BlockHubPage blocks={blocks.data} />} />
             <Route path="/b/:blockSlug/practice" element={<PracticePage blocks={blocks.data} />} />
+            <Route
+              path="/b/:blockSlug/theory"
+              element={<TheoryLayout blocks={blocks.data} onNoteRead={reloadBlocks} />}
+            >
+              <Route index element={<TheoryIntro />} />
+              <Route path=":noteSlug" element={<NoteView />} />
+            </Route>
             <Route path="/t/:taskSlug" element={<TaskPage onProgressChange={reloadBlocks} />} />
-            <Route path="/theory" element={<TheoryListPage blocks={blocks.data} />} />
-            <Route path="/theory/:noteSlug" element={<NotePage />} />
+            {/* Теория переехала внутрь блоков. Старые адреса живут ради закладок и ссылок на демо. */}
+            <Route path="/theory" element={<Navigate to="/" replace />} />
+            <Route path="/theory/:noteSlug" element={<LegacyNoteRedirect />} />
             <Route path="/review" element={<ReviewPage onReviewed={reloadReview} />} />
             <Route path="/stats" element={<StatsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
