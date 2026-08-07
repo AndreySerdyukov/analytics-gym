@@ -36,15 +36,27 @@ export function TheoryIntro() {
       </div>
 
       <div className="space-y-2">
-        {groups.map((group) => (
+        {groups.map((group, index) => (
           <Card key={group.slug ?? 'without-topic'} className="py-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold">{group.title}</h2>
+              <h2 className="font-semibold">
+                {/* Нумеруются только настоящие темы: «Без темы» — остаток, а не тема N. */}
+                {group.slug && <span className="text-muted">Тема {index + 1} · </span>}
+                {group.title}
+              </h2>
               <span className="text-xs text-muted">
                 конспектов: {group.notes.length} · прочитано:{' '}
                 {group.notes.filter((note) => note.is_read).length}
               </span>
             </div>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+              {group.notes.map((note) => (
+                <li key={note.slug}>
+                  {note.is_read && <span className="mr-1 text-success">✓</span>}
+                  {note.title}
+                </li>
+              ))}
+            </ul>
           </Card>
         ))}
       </div>

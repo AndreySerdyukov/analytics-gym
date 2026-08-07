@@ -1,7 +1,7 @@
 ---
-title: Введение
+title: С чего начать
 block: python
-topic: algorithms
+topic: intro
 tags: [method, interview, preparation]
 ---
 

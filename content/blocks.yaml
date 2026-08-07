@@ -38,6 +38,10 @@ blocks:
     description: Обработка данных, алгоритмические задачи, чистый код
     icon: "🐍"
     topics:
+      - slug: intro
+        title: Введение
+      - slug: complexity
+        title: Сложность алгоритмов
       - slug: core
         title: Язык и структуры данных
       - slug: pandas
