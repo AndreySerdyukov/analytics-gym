@@ -3,8 +3,9 @@ import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router
 import { Header } from './components/Header'
 import { ErrorBox, Loader } from './components/ui'
 import { useAsync } from './data/useAsync'
-import { BlockPage } from './pages/BlockPage'
+import { BlockHubPage } from './pages/BlockHubPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { PracticePage } from './pages/PracticePage'
 import { ReviewPage } from './pages/ReviewPage'
 import { StatsPage } from './pages/StatsPage'
 import { TaskPage } from './pages/TaskPage'
@@ -30,7 +31,9 @@ export function App() {
     <Router>
       <Header blocks={blocks.data ?? []} dueToday={review.data?.due_today ?? 0} />
       <main className="mx-auto max-w-6xl px-4 py-8">
-        {blocks.loading && <Loader label="Загружаем блоки" />}
+        {/* Полноэкранный лоадер нужен только при первой загрузке: reload() держит старые
+            данные, и без этой проверки отметка о прочтении сбрасывала бы весь экран. */}
+        {blocks.loading && !blocks.data && <Loader label="Загружаем блоки" />}
         {blocks.error && <ErrorBox message={blocks.error} onRetry={blocks.reload} />}
         {blocks.data && (
           <Routes>
@@ -38,7 +41,8 @@ export function App() {
               path="/"
               element={<DashboardPage blocks={blocks.data} dueToday={review.data?.due_today ?? 0} />}
             />
-            <Route path="/b/:blockSlug" element={<BlockPage blocks={blocks.data} />} />
+            <Route path="/b/:blockSlug" element={<BlockHubPage blocks={blocks.data} />} />
+            <Route path="/b/:blockSlug/practice" element={<PracticePage blocks={blocks.data} />} />
             <Route path="/t/:taskSlug" element={<TaskPage onProgressChange={reloadBlocks} />} />
             <Route path="/theory" element={<TheoryListPage blocks={blocks.data} />} />
             <Route path="/theory/:noteSlug" element={<NotePage />} />

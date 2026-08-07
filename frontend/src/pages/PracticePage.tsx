@@ -1,4 +1,4 @@
-/** Список задач блока с фильтрами по теме, сложности, тегам, статусу и поиском. */
+/** Практика блока: список задач с фильтрами по теме, сложности, тегам, статусу и поиском. */
 
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -11,7 +11,7 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const STATUSES: TaskStatus[] = ['new', 'in_progress', 'solved', 'failed']
 const TAGS_PREVIEW_COUNT = 8
 
-export function BlockPage({ blocks }: { blocks: Block[] }) {
+export function PracticePage({ blocks }: { blocks: Block[] }) {
   const { blockSlug = '' } = useParams()
   const block = blocks.find((item) => item.slug === blockSlug)
 
@@ -50,6 +50,8 @@ export function BlockPage({ blocks }: { blocks: Block[] }) {
 
   if (!block) return <EmptyState title="Такого блока нет" hint="Выбери блок в шапке" />
 
+  const solvedLabel = `Решено ${block.tasks_solved} из ${block.tasks_total}`
+
   const toggleTag = (tag: string) =>
     setTags((current) =>
       current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
@@ -69,11 +71,11 @@ export function BlockPage({ blocks }: { blocks: Block[] }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold">
-          {block.icon && <span className="mr-2">{block.icon}</span>}
-          {block.title}
-        </h1>
-        {block.description && <p className="mt-1 text-muted">{block.description}</p>}
+        <Link to={`/b/${block.slug}`} className="text-sm text-muted hover:text-text">
+          ← {block.title}
+        </Link>
+        <h1 className="mt-2 text-3xl font-extrabold">Практика</h1>
+        <p className="mt-1 text-muted">{solvedLabel}</p>
       </div>
 
       <Card className="space-y-4">
