@@ -118,6 +118,8 @@ export interface ReviewSummary {
 export interface NoteListItem {
   slug: string
   block_slug: string
+  /** Тема из blocks.yaml: по ней конспекты группируются в боковом списке раздела теории. */
+  topic_slug: string | null
   title: string
   tags: string[]
   cards_count: number

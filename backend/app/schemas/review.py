@@ -49,6 +49,8 @@ class NoteListItemOut(BaseModel):
 
     slug: str
     block_slug: str
+    # Тема из blocks.yaml: по ней конспекты группируются в боковом списке раздела теории.
+    topic_slug: str | None = None
     title: str
     tags: list[str]
     cards_count: int

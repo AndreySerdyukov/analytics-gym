@@ -195,6 +195,17 @@ export class StaticDataSource implements DataSource {
     }
   }
 
+  private toNoteListItem(note: RawNote, content: RawContent): NoteListItem {
+    return {
+      slug: note.slug,
+      block_slug: note.block_slug,
+      topic_slug: note.topic_slug,
+      title: note.title,
+      tags: note.tags,
+      cards_count: content.cards.filter((card) => card.note_slug === note.slug).length,
+    }
+  }
+
   async listBlocks(): Promise<Block[]> {
     const content = await this.load()
     const progress = loadProgressMap()
@@ -347,29 +358,26 @@ export class StaticDataSource implements DataSource {
 
   async listNotes(blockSlug?: string): Promise<NoteListItem[]> {
     const content = await this.load()
+    // Порядок тот же, что у API: блоки по своему порядку, внутри блока — по номеру файла.
+    const blockOrder = new Map(content.blocks.map((block) => [block.slug, block.sort_order]))
+
     return content.notes
       .filter((note) => !blockSlug || note.block_slug === blockSlug)
-      .map((note) => ({
-        slug: note.slug,
-        block_slug: note.block_slug,
-        title: note.title,
-        tags: note.tags,
-        cards_count: content.cards.filter((card) => card.note_slug === note.slug).length,
-      }))
+      .slice()
+      .sort(
+        (a, b) =>
+          (blockOrder.get(a.block_slug) ?? 0) - (blockOrder.get(b.block_slug) ?? 0) ||
+          a.position - b.position ||
+          a.slug.localeCompare(b.slug),
+      )
+      .map((note) => this.toNoteListItem(note, content))
   }
 
   async getNote(slug: string): Promise<NoteDetail> {
     const content = await this.load()
     const note = content.notes.find((candidate) => candidate.slug === slug)
     if (!note) throw new Error(`Конспект не найден: ${slug}`)
-    return {
-      slug: note.slug,
-      block_slug: note.block_slug,
-      title: note.title,
-      tags: note.tags,
-      cards_count: content.cards.filter((card) => card.note_slug === note.slug).length,
-      body_md: note.body_md,
-    }
+    return { ...this.toNoteListItem(note, content), body_md: note.body_md }
   }
 
   async getStats(): Promise<Stats> {

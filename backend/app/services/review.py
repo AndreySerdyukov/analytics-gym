@@ -99,16 +99,17 @@ def grade_card(
 
 
 def list_notes(db: Session, block_slug: str | None = None) -> list[NoteListItemOut]:
-    """Конспекты теории с числом карточек."""
+    """Конспекты теории с темой и числом карточек."""
     return [
         NoteListItemOut(
             slug=note.slug,
             block_slug=block_slug_,
+            topic_slug=topic_slug,
             title=note.title,
             tags=list(note.tags or []),
             cards_count=cards_count,
         )
-        for note, block_slug_, cards_count in review_repo.list_notes(db, block_slug)
+        for note, block_slug_, topic_slug, cards_count in review_repo.list_notes(db, block_slug)
     ]
 
 
@@ -117,11 +118,12 @@ def get_note(db: Session, slug: str) -> NoteDetailOut:
     row = review_repo.get_note_by_slug(db, slug)
     if row is None:
         raise NotFoundError(f"Конспект не найден: {slug}")
-    note, block_slug_, cards_count = row
+    note, block_slug_, topic_slug, cards_count = row
 
     return NoteDetailOut(
         slug=note.slug,
         block_slug=block_slug_,
+        topic_slug=topic_slug,
         title=note.title,
         tags=list(note.tags or []),
         cards_count=cards_count,

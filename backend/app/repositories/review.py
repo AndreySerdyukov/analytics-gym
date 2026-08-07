@@ -2,10 +2,10 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.db.models import Block, Card, ReviewLog, ReviewState, TheoryNote
+from app.db.models import Block, Card, ReviewLog, ReviewState, TheoryNote, Topic
 
 
 def list_due_cards(
@@ -88,37 +88,41 @@ def save_state(
     return state
 
 
-def list_notes(
-    db: Session, block_slug: str | None = None
-) -> list[tuple[TheoryNote, str, int]]:
-    """Конспекты теории с числом карточек в каждом."""
+def _notes_base_query() -> Select:
+    """Базовый запрос конспектов: конспект + слаг блока + слаг темы + число карточек.
+
+    Тема подключается через outer join: конспект без темы (или с темой, которую убрали из
+    blocks.yaml) обязан остаться в выдаче — иначе он молча пропал бы из навигации. По той же
+    причине условие `is_archived` стоит в ON, а не в WHERE: архивная тема должна давать
+    `topic_slug = None`, а не выбрасывать конспект.
+    """
     cards_count = (
         select(func.count(Card.id))
         .where(Card.note_id == TheoryNote.id, Card.is_archived.is_(False))
         .scalar_subquery()
     )
-    stmt = (
-        select(TheoryNote, Block.slug, cards_count)
+    return (
+        select(TheoryNote, Block.slug, Topic.slug, cards_count)
         .join(Block, Block.id == TheoryNote.block_id)
+        .outerjoin(Topic, (Topic.id == TheoryNote.topic_id) & (Topic.is_archived.is_(False)))
         .where(TheoryNote.is_archived.is_(False))
-        .order_by(Block.sort_order, TheoryNote.position, TheoryNote.slug)
+    )
+
+
+def list_notes(
+    db: Session, block_slug: str | None = None
+) -> list[tuple[TheoryNote, str, str | None, int]]:
+    """Конспекты теории со слагом темы и числом карточек в каждом."""
+    stmt = _notes_base_query().order_by(
+        Block.sort_order, TheoryNote.position, TheoryNote.slug
     )
     if block_slug:
         stmt = stmt.where(Block.slug == block_slug)
     return [tuple(row) for row in db.execute(stmt)]  # type: ignore[misc]
 
 
-def get_note_by_slug(db: Session, slug: str) -> tuple[TheoryNote, str, int] | None:
-    """Конспект по слагу вместе со слагом блока и числом его карточек."""
-    cards_count = (
-        select(func.count(Card.id))
-        .where(Card.note_id == TheoryNote.id, Card.is_archived.is_(False))
-        .scalar_subquery()
-    )
-    stmt = (
-        select(TheoryNote, Block.slug, cards_count)
-        .join(Block, Block.id == TheoryNote.block_id)
-        .where(TheoryNote.slug == slug, TheoryNote.is_archived.is_(False))
-    )
+def get_note_by_slug(db: Session, slug: str) -> tuple[TheoryNote, str, str | None, int] | None:
+    """Конспект по слагу вместе со слагами блока и темы и числом его карточек."""
+    stmt = _notes_base_query().where(TheoryNote.slug == slug)
     row = db.execute(stmt).first()
-    return (row[0], row[1], row[2]) if row else None
+    return (row[0], row[1], row[2], row[3]) if row else None
