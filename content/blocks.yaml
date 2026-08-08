@@ -42,8 +42,8 @@ blocks:
         title: Введение
       - slug: complexity
         title: Сложность алгоритмов
-      - slug: core
-        title: Язык и структуры данных
+      - slug: data-structures
+        title: Структуры данных
       - slug: pandas
         title: pandas и обработка данных
       - slug: algorithms
