@@ -44,6 +44,8 @@ blocks:
         title: Сложность алгоритмов
       - slug: data-structures
         title: Структуры данных
+      - slug: array-string-patterns
+        title: "Паттерны: массивы и строки"
       - slug: pandas
         title: pandas и обработка данных
       - slug: algorithms
